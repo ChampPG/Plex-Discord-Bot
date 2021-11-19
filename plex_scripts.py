@@ -12,6 +12,7 @@ from plexapi.myplex import MyPlexAccount  # PleX api
 import configparser                       # Users .ini file for configuration
 from cryptography.fernet import Fernet    # Encryption for config.ini and encryptedconfig.ini
 
+
 def create_config():
     """
     Files the config.ini with the decrypted information from the encryptedconfig.ini
@@ -30,6 +31,7 @@ def create_config():
     with open('config.ini', 'wb') as decrypted_file:
         decrypted_file.write(decrypted)
 
+
 def wipe_config():
     """
     wipes config.ini file
@@ -38,7 +40,9 @@ def wipe_config():
     wipe_file = open('config.ini', 'w')
     wipe_file.close()
 
+
 selection = input("Please enter 'rename', 'csv', 'bot_mode', or 'plex': ")
+
 
 def rename():
     """
@@ -187,14 +191,14 @@ def compile_csv(list_of_files, directory_path):
         writer.writerows(split_file_list)
 
 
-#TODO make suggestion function that writes inputs to a csv
+# TODO make suggestion function that writes inputs to a csv
 def suggestion(suggest):
     """
     Takes in a user suggesiton and writers it to a csv file
     :param suggest: user suggestion (str)
     :return: list of what is in the suggestion queue (list)
     """
-    path_to_csv = '/mnt/sda2/Movies_list.csv'
+    path_to_csv = '/mnt/sda2/suggestions.csv'
     list_of_media = []
 
     # read what is already in the list
@@ -208,7 +212,7 @@ def suggestion(suggest):
     list_of_media.append(suggest)
 
     # writer
-    with open('persons.csv', 'wb') as csvfile:
+    with open('suggestions.csv', 'wb') as csvfile:
         writer = csv.writer(csvfile)
         # write file row by row
         for item in list_of_media:
@@ -217,7 +221,7 @@ def suggestion(suggest):
     return list_of_media
 
 
-#TODO make a search function that will search for files in plex
+# TODO make a search function that will search for files in plex
 def search_plex(search):
     """
     Takes in the name from the discord user in the plex chat.
@@ -245,7 +249,7 @@ def search_plex(search):
             for show in shows_list.all():
                 for episode in plex.library.section('TV Shows').get(show.title).episodes():
                     if video.title == episode.title:
-                        media_list.append('%s %s %s (%s)' %(show.title, "|", video.title, video.TYPE))
+                        media_list.append('%s %s %s (%s)' % (show.title, "|", video.title, video.TYPE))
 
     if len(media_list) > 0:
         return media_list

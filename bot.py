@@ -16,12 +16,12 @@ client = discord.Client()
 plex_scripts.wipe_config() # Clears config.ini
 
 command_list = [{'Name': '`!help`', 'Def': 'Shows all commands'},
-                {'Name': '`!Search=`', 'Def':
-                    ' searches up any content with the query. Ex: `!search=The Monkey King`'}]
+                {'Name': '`!Search =`', 'Def':
+                    ' searches up any content with the query. Ex: `!search = The Monkey King`'}]
 
 @client.event
 async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
+    print('Bot is online! {0.user}'.format(client))
 
 @client.event
 async def on_message(message):
@@ -33,7 +33,7 @@ async def on_message(message):
     :return help: returns the help dictionary in a neat format with the name then what it does
     """
     username = str(message.author).strip('#')[0]
-    user_message = str(message.content).split("=")
+    user_message = str(message.content).split(" = ")
     channel = str(message.channel.name)
     print(f'{username}: {user_message} ({channel})')
 
@@ -48,16 +48,22 @@ async def on_message(message):
                 index = 1
                 print(list_of_search)
                 for item in list_of_search:
-                    await message.channel.send(f'{index}: {item}')
+                    if list_of_search.index(item)+1 == len(list_of_search):
+                        await message.channel.send(f'{index}: {item}')
+                        await message.channel.send("That is all I can find.")
+                    else:
+                        await message.channel.send(f'{index}: {item}')
                     index+=1
                 return
             else:
                 await message.channel.send("Nothing In Plex: Please change search query")
                 return
-        if user_message[0].lower() == '!help':
+        elif user_message[0].lower() == '!help':
             for help_command in command_list:
                 await message.channel.send(f"{help_command['Name']} | {help_command['Def']} ")
             return
+        else:
+            await message.channel.send("Invalid Command: Type `!help` if you need help figuring out commands.")
 
 
 client.run(token)
