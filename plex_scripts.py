@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#TODO add argparse and configparser
+#TODO add argparse
 
 import os                                 # needed to scan through directories
 from shutil import copyfile               # used to copy files
@@ -10,9 +10,13 @@ from alive_progress import alive_bar      # progress bar
 import time                               # dependency for alive_progress
 from plexapi.myplex import MyPlexAccount  # PleX api
 import configparser                       # Users .ini file for configuration
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet    # Encryption for config.ini and encryptedconfig.ini
 
 def create_config():
+    """
+    Files the config.ini with the decrypted information from the encryptedconfig.ini
+    :return: config.ini with all decrypted information
+    """
     with open('keyconfig', 'rb') as filekey:
         key = filekey.read()
 
@@ -27,6 +31,10 @@ def create_config():
         decrypted_file.write(decrypted)
 
 def wipe_config():
+    """
+    wipes config.ini file
+    :return: wiped config.ini file
+    """
     wipe_file = open('config.ini', 'w')
     wipe_file.close()
 
@@ -210,7 +218,13 @@ def suggestion(suggest):
 
 
 #TODO make a search function that will search for files in plex
-def search_plex(name):
+def search_plex(search):
+    """
+    Takes in the name from the discord user in the plex chat.
+    Then looks for all files that contain the "search" in it's name
+    :param search: Name of search (str)
+    :return: list of files that contain name
+    """
     create_config()
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -223,7 +237,7 @@ def search_plex(name):
     plex = account.resource(server_name).connect()
 
     media_list = []
-    for video in plex.search(name):
+    for video in plex.search(search):
         if video.TYPE == 'movie':
             media_list.append('%s (%s)' % (video.title, video.TYPE))
         if video.TYPE == 'episode':

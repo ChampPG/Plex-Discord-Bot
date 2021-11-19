@@ -4,7 +4,8 @@ import configparser
 
 #TODO make into bot that takes in suggestions fuction and writes to csv files
 
-plex_scripts.create_config()
+
+plex_scripts.create_config() # Decrypes encryptedconfig.ini
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -12,7 +13,7 @@ token = config['DISCORD']['token'] # PUT YOUR TOKEN HERE
 
 client = discord.Client()
 
-plex_scripts.wipe_config()
+plex_scripts.wipe_config() # Clears config.ini
 
 command_list = [{'Name': '`!help`', 'Def': 'Shows all commands'},
                 {'Name': '`!Search=`', 'Def':
