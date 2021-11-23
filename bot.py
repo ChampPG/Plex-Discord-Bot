@@ -2,9 +2,6 @@ import plex_scripts
 import discord
 import configparser
 
-#TODO make into bot that takes in suggestions fuction and writes to csv files
-
-
 plex_scripts.create_config() # Decrypts encryptedconfig.ini
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -23,8 +20,6 @@ command_list = [{'Name': '`!help`', 'Def': 'Shows all commands'},
 async def on_ready():
     print('Bot is online! {0.user}'.format(client))
     await client.change_presence(activity=discord.Game(name="!help for commands"))
-
-#TODO make it so bot doesn't say !help if any word is said
 
 @client.event
 async def on_message(message):

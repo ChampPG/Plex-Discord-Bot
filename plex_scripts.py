@@ -42,7 +42,7 @@ def wipe_config():
     wipe_file.close()
 
 
-selection = input("Please enter 'rename', 'csv', 'bot_mode', or 'plex': ")
+selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', or 'plex_check': ")
 
 
 def rename():
@@ -57,7 +57,7 @@ def rename():
     if path_type == 'custom':
         current_path = input("Please enter current path of files: ")
     elif path_type == 'static':
-        current_path = r'C:\Users\paul.gleason\Documents\Test_Current'
+        current_path = '/mnt/sda2/Movies'
     new_path = input("Please enter where you want them to go: ")
 
     for files in os.listdir(current_path):
@@ -74,7 +74,7 @@ def get_files():
     Gets all the files in a certain directory
         Files must be a file type in the extension_list
 
-    :return compile_csv: If csv was selected at the start this will take all the files in the directory and put
+    :return compile_csv: If Make_Movie_csv was selected at the start this will take all the files in the directory and put
     them into a csv file (list),(str)
     :return plexcheck: If plex was selected at the start this will check all the folders in the selected directory and
     check the names to all the files in the selected plex library (list)
@@ -106,9 +106,9 @@ def get_files():
                     file_list.append(files)
 
     file_list.sort()
-    if selection == 'csv':
+    if selection == 'Make_Movie_csv':
         return compile_csv(file_list, path_to_files)
-    if selection == 'plex':
+    if selection == 'plex_check':
         return plexcheck(directory_list)
 
 
@@ -149,9 +149,9 @@ def plexcheck(list_of_files):
             if video_check.lower() not in movies_list and '[' not in video_check:
                 movies_to_check.append({'Current Name': video_check})
 
-    movies_to_check.sort()
+    movies_to_check = sorted(movies_to_check, key=lambda d: d['Current Name'])
 
-    path_to_csv = '/mnt/sda2/plex_scripts/Movies_Check_List.csv'
+    path_to_csv = 'Movies_Check_List.csv'
     headers = ['Current Name']
     with open(path_to_csv, 'w', encoding='ISO-8859-1', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=headers)
@@ -192,7 +192,6 @@ def compile_csv(list_of_files, directory_path):
         writer.writerows(split_file_list)
 
 
-# TODO make suggestion function that writes inputs to a csv
 def suggestion(suggest):
     """
     Takes in a user suggesiton and writers it to a csv file
@@ -232,8 +231,6 @@ def suggestion(suggest):
 
     return "Thank You for the suggestion"
 
-
-# TODO make a search function that will search for files in plex
 def search_plex(search):
     """
     Takes in the name from the discord user in the plex chat.
@@ -256,27 +253,40 @@ def search_plex(search):
     print(f"Connected to '{server_name}'")
 
     media_list = []
+    problem_movies = [{'Name': 'The Monkey King', 'id': '119892'}]
     for video_search in plex.search(search):
         if video_search.TYPE == 'movie':
             # get movie id
             movie_id_getter = requests.get(f'https://api.themoviedb.org/3/search/movie?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US&query={video_search.title}&page=1&include_adult=true')
             movie_id = movie_id_getter.json()
             if movie_id['total_results'] == 0:
-                media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a tailer.")) # wanted to try to do a different way of formatting
+                media_list.append('%s (%s - %s) %s' % (video_search.title, video_search.TYPE, movie_id['results'][0]['release_date'][:4], "Couldn't find a trailer.")) # wanted to try to do a different way of formatting
             else:
                 movie_data = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id['results'][0]['id']}/videos?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US")
                 key = movie_data.json()
                 try:
                     # print(key)
-                    media_list.append('%s (%s) %s %s' % (video_search.title, video_search.TYPE, '|', f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
+                    media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE, movie_id['results'][0]['release_date'][:4], '|', f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
                 except IndexError:
-                    media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a tailer."))
+                    hit = []
+                    for index in range(len(problem_movies)):
+                        for Name in problem_movies[index]:
+                            if video_search.title == problem_movies[index][Name]:
+                                hit.append(index)
+                                movie_data = requests.get(
+                                    f"https://api.themoviedb.org/3/movie/{problem_movies[index]['id']}/videos?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US&page=1")
+                                key = movie_data.json()
+                                print(key)
+                                media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE, key['results'][0]['published_at'][:4], '|',
+                                                                     f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
+                            elif index not in hit:
+                                media_list.append('%s (%s - %s) %s' % (video_search.title, video_search.TYPE, movie_id['results'][0]['release_date'][:4], "Couldn't find a trailer."))
         if video_search.TYPE == 'episode':
             shows_list = plex.library.section('TV Shows')
             for show in shows_list.all():
                 for episode in plex.library.section('TV Shows').get(show.title).episodes():
                     if video_search.title == episode.title:
-                        media_list.append('%s %s %s (%s)' % (show.title, "|", video_search.title, video_search.TYPE))
+                        media_list.append('%s %s %s (%s %s)' % (show.title, "|", video_search.title, "TV", video_search.TYPE))
 
     if len(media_list) > 0:
         return media_list
@@ -284,7 +294,7 @@ def search_plex(search):
         return "Nothing In Plex"
 
 # Selects which path to take from user input
-if selection == 'csv':
+if selection == 'Make_Movie_csv':
     get_files()
     wipe_config()
     input("Done! press any key to terminate program.")
@@ -292,7 +302,7 @@ if selection == 'rename':
     rename()
     wipe_config()
     input("Done! press any key to terminate program.")
-if selection == 'plex':
+if selection == 'plex_check':
     wipe_config()
     get_files()
 if selection == 'search':
