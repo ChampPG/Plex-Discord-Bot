@@ -5,13 +5,11 @@
 import os                                 # needed to scan through directories
 from shutil import copyfile               # used to copy files
 import csv                                # for csv files
-
 import requests
 from moviepy.editor import VideoFileClip  # get information on video files
 from alive_progress import alive_bar      # progress bar
 import time                               # dependency for alive_progress
 from plexapi.myplex import MyPlexAccount  # MyPlexAccount api
-import plexapi                            # Full PlexAPI
 import configparser                       # Users .ini file for configuration
 from cryptography.fernet import Fernet    # Encryption for config.ini and encryptedconfig.ini
 
@@ -170,7 +168,7 @@ def compile_csv(list_of_files, directory_path):
     :return: a csv with the headers and puts the name | File Type | Resolution | Length (Minutes) (CSV)
     """
     # path_to_csv = input("Please enter path to CSV file: ")
-    path_to_csv = '/mnt/sda2/Movies_list.csv'
+    path_to_csv = 'Movies_list.csv'
     headers = ['Name', 'File Type', 'Resolution', 'Length (Minutes)']
     split_file_list = []
 
@@ -201,28 +199,38 @@ def suggestion(suggest):
     :param suggest: user suggestion (str)
     :return: list of what is in the suggestion queue (list)
     """
-    path_to_csv = '/mnt/sda2/suggestions.csv'
+    path_to_csv = 'suggestions.csv'
     list_of_media = []
-    print(suggest)
 
+    if suggest[-1] != ')':
+        return 'Please enter format correctly Ex: `!suggest = The Monkey King (2014)`'
+
+    try:
+        name = suggest.split(" (")[0]
+        year = suggest.split(" (")[1][0:-1]
+    except IndexError:
+        return 'Please enter format correctly Ex: `!suggest = The Monkey King (2014)`'
+
+    headers = ['Name', 'Year']
     # read what is already in the list
-    with open(path_to_csv, 'rb') as csvfile:
-        reader = csv.reader(csvfile)
+    with open(path_to_csv, 'r', encoding='ISO-8859-1', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
         # read file row by row
         for row in reader:
             list_of_media.append(row)
 
+
     # add suggestion to list
-    list_of_media.append(suggest)
+    list_of_media.append({'Name': name, 'Year': year})
+
 
     # writer
-    with open('suggestions.csv', 'wb') as csvfile:
-        writer = csv.writer(csvfile)
-        # write file row by row
-        for item in list_of_media:
-            writer.writerow(item)
+    with open(path_to_csv, 'w', encoding='ISO-8859-1', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(list_of_media)
 
-    return list_of_media
+    return "Thank You for the suggestion"
 
 
 # TODO make a search function that will search for files in plex
@@ -242,8 +250,8 @@ def search_plex(search):
     wipe_config()
     # gets plex content
     account = MyPlexAccount(username, password)
-    print("About to connect")
-    print("Connecting......")
+    # print("About to connect")
+    # print("Connecting......")
     plex = account.resource(server_name).connect()
     print(f"Connected to '{server_name}'")
 
@@ -251,7 +259,7 @@ def search_plex(search):
     for video_search in plex.search(search):
         if video_search.TYPE == 'movie':
             # get movie id
-            movie_id_getter = requests.get(f'https://api.themoviedb.org/3/search/movie?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US&query={video.title}&page=1&include_adult=true')
+            movie_id_getter = requests.get(f'https://api.themoviedb.org/3/search/movie?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US&query={video_search.title}&page=1&include_adult=true')
             movie_id = movie_id_getter.json()
             if movie_id['total_results'] == 0:
                 media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a tailer.")) # wanted to try to do a different way of formatting
@@ -259,8 +267,8 @@ def search_plex(search):
                 movie_data = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id['results'][0]['id']}/videos?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US")
                 key = movie_data.json()
                 try:
-                    print(key)
-                    media_list.append('%s %s (%s) %s %s' % (video_search.title, '|', video_search.TYPE, '|', f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
+                    # print(key)
+                    media_list.append('%s (%s) %s %s' % (video_search.title, video_search.TYPE, '|', f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
                 except IndexError:
                     media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a tailer."))
         if video_search.TYPE == 'episode':

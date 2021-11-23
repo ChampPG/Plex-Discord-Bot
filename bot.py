@@ -1,28 +1,30 @@
 import plex_scripts
 import discord
 import configparser
-import requests
 
 #TODO make into bot that takes in suggestions fuction and writes to csv files
 
 
 plex_scripts.create_config() # Decrypts encryptedconfig.ini
-
 config = configparser.ConfigParser()
 config.read('config.ini')
 token = config['DISCORD']['token'] # PUT YOUR TOKEN HERE
-
 client = discord.Client()
-
 plex_scripts.wipe_config() # Clears config.ini
 
 command_list = [{'Name': '`!help`', 'Def': 'Shows all commands'},
                 {'Name': '`!Search =`', 'Def':
-                    ' searches up any content with the query. Ex: `!search = The Monkey King`'}]
+                    ' Searches up any content with the query. Ex: `!search = The Monkey King`'},
+                {'Name': '`!suggest =`', 'Def': ' Adds a suggestion to the list to be put on Plex. '
+                                                'Ex (Year): `!suggest = The Monkey King (2014)` '
+                                                'or `!suggest = The Monkey King (N/A)` if year is unknown'}]
 
 @client.event
 async def on_ready():
     print('Bot is online! {0.user}'.format(client))
+    await client.change_presence(activity=discord.Game(name="!help for commands"))
+
+#TODO make it so bot doesn't say !help if any word is said
 
 @client.event
 async def on_message(message):
@@ -33,7 +35,7 @@ async def on_message(message):
     :return search fail: if search fails it returns that nothing is in the plex
     :return help: returns the help dictionary in a neat format with the name then what it does
     """
-    username = str(message.author).strip('#')[0]
+    username = str(message.author).strip('#')
     user_message = str(message.content).split(" = ")
     channel = str(message.channel.name)
     print(f'{username}: {user_message} ({channel})')
@@ -61,10 +63,11 @@ async def on_message(message):
                 return
         elif user_message[0].lower() == '!help':
             for help_command in command_list:
-                await message.channel.send(f"{help_command['Name']} | {help_command['Def']} ")
+                await message.channel.send(f"{help_command['Name']} | {help_command['Def']}")
             return
-        else:
+        elif user_message[0].lower() == '!suggest':
+            await message.channel.send(plex_scripts.suggestion(user_message[1]))
+        elif user_message[0].lower()[:1] == '!':
             await message.channel.send("Invalid Command: Type `!help` if you need help figuring out commands.")
-
 
 client.run(token)
