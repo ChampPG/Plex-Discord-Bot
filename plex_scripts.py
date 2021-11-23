@@ -5,10 +5,13 @@
 import os                                 # needed to scan through directories
 from shutil import copyfile               # used to copy files
 import csv                                # for csv files
+
+import requests
 from moviepy.editor import VideoFileClip  # get information on video files
 from alive_progress import alive_bar      # progress bar
 import time                               # dependency for alive_progress
-from plexapi.myplex import MyPlexAccount  # PleX api
+from plexapi.myplex import MyPlexAccount  # MyPlexAccount api
+import plexapi                            # Full PlexAPI
 import configparser                       # Users .ini file for configuration
 from cryptography.fernet import Fernet    # Encryption for config.ini and encryptedconfig.ini
 
@@ -200,6 +203,7 @@ def suggestion(suggest):
     """
     path_to_csv = '/mnt/sda2/suggestions.csv'
     list_of_media = []
+    print(suggest)
 
     # read what is already in the list
     with open(path_to_csv, 'rb') as csvfile:
@@ -238,18 +242,33 @@ def search_plex(search):
     wipe_config()
     # gets plex content
     account = MyPlexAccount(username, password)
+    print("About to connect")
+    print("Connecting......")
     plex = account.resource(server_name).connect()
+    print(f"Connected to '{server_name}'")
 
     media_list = []
-    for video in plex.search(search):
-        if video.TYPE == 'movie':
-            media_list.append('%s (%s)' % (video.title, video.TYPE))
-        if video.TYPE == 'episode':
+    for video_search in plex.search(search):
+        if video_search.TYPE == 'movie':
+            # get movie id
+            movie_id_getter = requests.get(f'https://api.themoviedb.org/3/search/movie?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US&query={video.title}&page=1&include_adult=true')
+            movie_id = movie_id_getter.json()
+            if movie_id['total_results'] == 0:
+                media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a tailer.")) # wanted to try to do a different way of formatting
+            else:
+                movie_data = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id['results'][0]['id']}/videos?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US")
+                key = movie_data.json()
+                try:
+                    print(key)
+                    media_list.append('%s %s (%s) %s %s' % (video_search.title, '|', video_search.TYPE, '|', f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
+                except IndexError:
+                    media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a tailer."))
+        if video_search.TYPE == 'episode':
             shows_list = plex.library.section('TV Shows')
             for show in shows_list.all():
                 for episode in plex.library.section('TV Shows').get(show.title).episodes():
-                    if video.title == episode.title:
-                        media_list.append('%s %s %s (%s)' % (show.title, "|", video.title, video.TYPE))
+                    if video_search.title == episode.title:
+                        media_list.append('%s %s %s (%s)' % (show.title, "|", video_search.title, video_search.TYPE))
 
     if len(media_list) > 0:
         return media_list
@@ -268,3 +287,5 @@ if selection == 'rename':
 if selection == 'plex':
     wipe_config()
     get_files()
+if selection == 'search':
+    print(search_plex('300'))

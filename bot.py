@@ -1,11 +1,12 @@
 import plex_scripts
 import discord
 import configparser
+import requests
 
 #TODO make into bot that takes in suggestions fuction and writes to csv files
 
 
-plex_scripts.create_config() # Decrypes encryptedconfig.ini
+plex_scripts.create_config() # Decrypts encryptedconfig.ini
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -49,10 +50,10 @@ async def on_message(message):
                 print(list_of_search)
                 for item in list_of_search:
                     if list_of_search.index(item)+1 == len(list_of_search):
-                        await message.channel.send(f'{index}: {item}')
+                        await message.channel.send(f'`{index}`: {item}')
                         await message.channel.send("That is all I can find.")
                     else:
-                        await message.channel.send(f'{index}: {item}')
+                        await message.channel.send(f'`{index}:` {item}')
                     index+=1
                 return
             else:
