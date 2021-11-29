@@ -270,8 +270,11 @@ def search_plex(search):
     password = config['PLEX']['password']  # password of plex admin from config.ini
     server_name = config['PLEX']['server_name']  # takes in server name from config.ini
     api_key = config['MOVIEDB']['key']
+    wipe_config()
     # gets plex content
     account = MyPlexAccount(username, password)
+    username = "*" * 5
+    password = "*" * 5
     # print("About to connect")
     # print("Connecting......")
     plex = account.resource(server_name).connect()
@@ -291,7 +294,9 @@ def search_plex(search):
                 key = movie_data.json()
                 try:
                     # print(key)
-                    media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE, movie_id['results'][0]['release_date'][:4], '|', f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
+                    media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE,
+                                                              movie_id['results'][0]['release_date'][:4], '|',
+                                                              f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
                 except IndexError:
                     hit = []
                     for index in range(len(problem_movies)):
@@ -302,18 +307,22 @@ def search_plex(search):
                                     f"https://api.themoviedb.org/3/movie/{problem_movies[index]['id']}/videos?api_key={api_key}&language=en-US&page=1")
                                 key = movie_data.json()
                                 print(key)
-                                media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE, key['results'][0]['published_at'][:4], '|',
+                                media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE,
+                                                                          key['results'][0]['published_at'][:4], '|',
                                                                      f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
                             elif index not in hit:
-                                media_list.append('%s (%s - %s) %s' % (video_search.title, video_search.TYPE, movie_id['results'][0]['release_date'][:4], "Couldn't find a trailer."))
-            wipe_config()
+                                media_list.append('%s (%s - %s) %s' % (video_search.title, video_search.TYPE,
+                                                                       movie_id['results'][0]['release_date'][:4],
+                                                                       "Couldn't find a trailer."))
         if video_search.TYPE == 'episode':
             shows_list = plex.library.section('TV Shows')
             for show in shows_list.all():
                 for episode in plex.library.section('TV Shows').get(show.title).episodes():
                     if video_search.title == episode.title:
-                        media_list.append('%s %s %s (%s %s)' % (show.title, "|", video_search.title, "TV", video_search.TYPE))
+                        media_list.append('%s %s %s (%s %s)' % (show.title, "|", video_search.title, "TV",
+                                                                video_search.TYPE))
 
+    api_key = "*" * 5
     if len(media_list) > 0:
         return media_list
     else:
