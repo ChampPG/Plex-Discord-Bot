@@ -33,6 +33,24 @@ def create_config():
         decrypted_file.write(decrypted)
 
 
+def encrypt_config():
+    """
+    Allows the ability to add new information to the config.ini before it becomes encrypted.
+    :return: encryptedconfig.ini
+    """
+    with open('keyconfig', 'rb') as filekey:
+        key = filekey.read()
+
+    fernet = Fernet(key)
+
+    with open('config.ini', 'rb') as encrypted_file:
+        encrypted = encrypted_file.read()
+
+    encrypted = fernet.encrypt()
+
+    with open('config.ini', 'wb') as decrypted_file:
+        decrypted_file.write(decrypted)
+
 def wipe_config():
     """
     wipes config.ini file
@@ -232,7 +250,7 @@ def suggestion(suggest):
     return "Thank You for the suggestion"
 
 def search_plex(search):
-    """
+    """larity of code and layout
     Takes in the name from the discord user in the plex chat.
     Then looks for all files that contain the "search" in it's name
     :param search: Name of search (str)
