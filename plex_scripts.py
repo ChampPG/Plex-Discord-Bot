@@ -43,13 +43,14 @@ def encrypt_config():
 
     fernet = Fernet(key)
 
-    with open('config.ini', 'rb') as encrypted_file:
-        encrypted = encrypted_file.read()
+    with open('config.ini', 'rb') as decrypted_file:
+        decrypted = decrypted_file.read()
 
-    encrypted = fernet.encrypt()
+    decrypted = fernet.encrypt(decrypted)
 
-    with open('config.ini', 'wb') as decrypted_file:
+    with open('encryptedconfig.ini', 'wb') as decrypted_file:
         decrypted_file.write(decrypted)
+
 
 def wipe_config():
     """
@@ -61,6 +62,11 @@ def wipe_config():
 
 
 selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', or 'plex_check': ")
+                # selection of what function you want to use
+                # bot_mode does nothing expect for let the code run for the bot
+                # plex_check creates a csv file of the plex movies that much be checked
+                # rename is for renaming movie files
+                # Make_Movie_csv makes a csv of all the movies
 
 
 def rename():
@@ -249,6 +255,7 @@ def suggestion(suggest):
 
     return "Thank You for the suggestion"
 
+
 def search_plex(search):
     """larity of code and layout
     Takes in the name from the discord user in the plex chat.
@@ -262,7 +269,7 @@ def search_plex(search):
     username = config['PLEX']['username']  # username of plex admin from config.ini
     password = config['PLEX']['password']  # password of plex admin from config.ini
     server_name = config['PLEX']['server_name']  # takes in server name from config.ini
-    wipe_config()
+    api_key = config['MOVIEDB']['key']
     # gets plex content
     account = MyPlexAccount(username, password)
     # print("About to connect")
@@ -275,12 +282,12 @@ def search_plex(search):
     for video_search in plex.search(search):
         if video_search.TYPE == 'movie':
             # get movie id
-            movie_id_getter = requests.get(f'https://api.themoviedb.org/3/search/movie?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US&query={video_search.title}&page=1&include_adult=true')
+            movie_id_getter = requests.get(f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&language=en-US&query={video_search.title}&page=1&include_adult=true")
             movie_id = movie_id_getter.json()
             if movie_id['total_results'] == 0:
-                media_list.append('%s (%s - %s) %s' % (video_search.title, video_search.TYPE, movie_id['results'][0]['release_date'][:4], "Couldn't find a trailer.")) # wanted to try to do a different way of formatting
+                media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a trailer.")) # wanted to try to do a different way of formatting
             else:
-                movie_data = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id['results'][0]['id']}/videos?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US")
+                movie_data = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id['results'][0]['id']}/videos?api_key={api_key}&language=en-US")
                 key = movie_data.json()
                 try:
                     # print(key)
@@ -292,13 +299,14 @@ def search_plex(search):
                             if video_search.title == problem_movies[index][Name]:
                                 hit.append(index)
                                 movie_data = requests.get(
-                                    f"https://api.themoviedb.org/3/movie/{problem_movies[index]['id']}/videos?api_key=cf5119a3b75e12b1927174e8a5c589f6&language=en-US&page=1")
+                                    f"https://api.themoviedb.org/3/movie/{problem_movies[index]['id']}/videos?api_key={api_key}&language=en-US&page=1")
                                 key = movie_data.json()
                                 print(key)
                                 media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE, key['results'][0]['published_at'][:4], '|',
                                                                      f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
                             elif index not in hit:
                                 media_list.append('%s (%s - %s) %s' % (video_search.title, video_search.TYPE, movie_id['results'][0]['release_date'][:4], "Couldn't find a trailer."))
+            wipe_config()
         if video_search.TYPE == 'episode':
             shows_list = plex.library.section('TV Shows')
             for show in shows_list.all():
@@ -311,17 +319,27 @@ def search_plex(search):
     else:
         return "Nothing In Plex"
 
+
 # Selects which path to take from user input
 if selection == 'Make_Movie_csv':
     get_files()
     wipe_config()
     input("Done! press any key to terminate program.")
-if selection == 'rename':
+elif selection == 'rename':
     rename()
     wipe_config()
     input("Done! press any key to terminate program.")
-if selection == 'plex_check':
+elif selection == 'plex_check':
     wipe_config()
     get_files()
-if selection == 'search':
+elif selection == 'search':
     print(search_plex('300'))
+
+# for adding information to the config
+elif selection == "open":
+    create_config()
+elif selection == "close":
+    encrypt_config()
+    wipe_config()
+elif selection == "clear":
+    wipe_config()
