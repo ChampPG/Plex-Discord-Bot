@@ -11,10 +11,13 @@ plex_scripts.wipe_config() # Clears config.ini
 
 command_list = [{'Name': '`!help`', 'Def': 'Shows all commands'},
                 {'Name': '`!Search =`', 'Def':
-                    ' Searches up any content with the query. Ex: `!search = The Monkey King`'},
-                {'Name': '`!suggest =`', 'Def': ' Adds a suggestion to the list to be put on Plex. '
-                                                'Ex (Year): `!suggest = The Monkey King (2014)` '
-                                                'or `!suggest = The Monkey King (N/A)` if year is unknown'}]
+                    ' Searches up any content (TV or Movies) with the query. | Example: `!search = The Monkey King`'},
+                {'Name': '`!suggest =`', 'Def': ' Adds a suggestion (TV or Movie) to the list to be put on Plex. | '
+                                                'Example (Year): `!suggest = The Monkey King (2014)` '
+                                                'or `!suggest = The Monkey King (N/A)` if year is unknown'},
+                {'Name': '`!GetSuggestionCSV`', 'Def': 'Returns a .csv of all current suggestions '
+                                                       '**RUN THIS BEFORE !suggest** | Example: `!GetSuggestionCSV`'},
+                {'Name': '`!MoviesCSV =`', 'Def': 'Returns a .csv of all the movies on the Plex | Example: `!MoviesCSV`'}]
 
 @client.event
 async def on_ready():
@@ -38,13 +41,15 @@ async def on_message(message):
     # Check if message if from the bot
     if message.author == client.user:
         return
+
     if message.channel.name == 'plex':
+
         if user_message[0].lower() == "!search":
             await message.channel.send("Please hold on for a few minutes :)")
-            list_of_search = plex_scripts.search_plex(user_message[1])
+            list_of_search = plex_scripts.search_plex(process_list[0]['Content'])
             if list_of_search != "Nothing In Plex":
                 index = 1
-                print(list_of_search)
+                # print(list_of_search)
                 for item in list_of_search:
                     if list_of_search.index(item)+1 == len(list_of_search):
                         await message.channel.send(f'`{index}`: {item}')
@@ -56,12 +61,23 @@ async def on_message(message):
             else:
                 await message.channel.send("Nothing In Plex: Please change search query")
                 return
+
+        elif user_message[0] == '!MoviesCSV':
+            await message.channel.send(file=discord.File("Movies_list.csv"))
+
         elif user_message[0].lower() == '!help':
             for help_command in command_list:
                 await message.channel.send(f"{help_command['Name']} | {help_command['Def']}")
             return
+
+        elif user_message[0] == "!GetSuggestionCSV":
+            await message.channel.send(file=discord.File("suggestions.csv"))
+
         elif user_message[0].lower() == '!suggest':
             await message.channel.send(plex_scripts.suggestion(user_message[1]))
+            await message.channel.send("Below is the current list of suggestions")
+            await message.channel.send(file=discord.File("suggestions.csv"))
+
         elif user_message[0].lower()[:1] == '!':
             await message.channel.send("Invalid Command: Type `!help` if you need help figuring out commands.")
 
