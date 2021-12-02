@@ -86,7 +86,7 @@ def rename():
     new_path = '/home/plexadmin/Downloads/Plex/Movies/'
 
     for files in os.listdir(current_path):
-        if not os.path.isdir(new_path + '/' + files[:files.find('(')-1]):
+        if not os.path.isdir('/dev/sda2/Movies/' + files[:files.find('(')-1]):
             extention = files[-4:]
             os.mkdir(new_path + '/' + files[:files.find('(')-1])
             copyfile(current_path + '/' + files, new_path + '/' + files[:files.find('(')-1] + '/' + files[:files.find('(')-1] + extention)
