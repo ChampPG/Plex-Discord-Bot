@@ -81,16 +81,18 @@ def rename():
     if path_type == 'custom':
         current_path = input("Please enter current path of files: ")
     elif path_type == 'static':
-        current_path = '/mnt/sda2/Movies'
-    new_path = input("Please enter where you want them to go: ")
+        current_path = '/home/plexadmin/Downloads/Plex/Epic Films 4/'
+    # new_path = input("Please enter where you want them to go: ")
+    new_path = '/home/plexadmin/Downloads/Plex/Movies/'
 
     for files in os.listdir(current_path):
-        if not os.path.isdir(new_path + '/' + files[:-3]):
-            os.mkdir(new_path + '/' + files[:-3])
-            copyfile(current_path + '/' + files, new_path + '/' + files[:-3] + '/' + files)
-            print(files[:-3], 'has been made and', files, 'has been moved')
+        if not os.path.isdir(new_path + '/' + files[:files.find('(')-1]):
+            extention = files[-4:]
+            os.mkdir(new_path + '/' + files[:files.find('(')-1])
+            copyfile(current_path + '/' + files, new_path + '/' + files[:files.find('(')-1] + '/' + files[:files.find('(')-1] + extention)
+            print(files[:files.find('(')-1], 'has been made and', files[:files.find('(')-1] + extention, 'has been moved')
         else:
-            print(files[:-3], 'Dir is already made')
+            print(files[:files.find('(')-1], 'Dir is already made')
 
 
 def get_files():
@@ -336,7 +338,6 @@ if selection == 'Make_Movie_csv':
     input("Done! press any key to terminate program.")
 elif selection == 'rename':
     rename()
-    wipe_config()
     input("Done! press any key to terminate program.")
 elif selection == 'plex_check':
     wipe_config()
