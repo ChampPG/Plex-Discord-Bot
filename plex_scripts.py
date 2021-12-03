@@ -351,6 +351,52 @@ def search_plex(search):
         return "Nothing In Plex"
 
 
+def jacob():
+    """
+
+    :return:
+    """
+    create_config()
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    username = config['PLEX']['username']  # username of plex admin from config.ini
+    password = config['PLEX']['password']  # password of plex admin from config.ini
+    my_server = config['PLEX']['server_name']  # takes in server name from config.ini
+    jacobs_server = "The Hive"
+    wipe_config()
+
+    account = MyPlexAccount(username, password)
+    my_plex = account.resource(my_server).connect()
+    print('connect to', my_server)
+    jacob_plex = account.resource(jacobs_server).connect()
+    print('connect to', jacobs_server)
+
+    my_movies = my_plex.library.section('Movies')
+    jacob_movies = jacob_plex.library.section('Movies')
+
+    my_movie_list = []
+    for my_movie in my_movies.all():
+        my_movie_list.appende(my_movie.title)
+
+    jacob_movie_list = []
+    for jacob_movie in jacob_movies.all():
+        jacob_movie_list.append(jacob_movie.title)
+
+    movie_list = []
+    with alive_bar(total=len(jacob_movies.all()), bar='blocks') as bar:  # Creates the bar
+        time.sleep(.005)
+        for movie in my_movie_list:
+            if movie not in jacob_movie_list:
+                movie_list.append({"Name": movie})
+            bar()
+
+    headers = ["Name"]
+
+    with open('jacob.csv', 'w', encoding='ISO-8859-1', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(movie_list)
+
 # Selects which path to take from user input
 if selection == 'Make_Movie_csv':
     get_files()
@@ -375,3 +421,6 @@ elif selection == "close":
     wipe_config()
 elif selection == "clear":
     wipe_config()
+
+elif selection == 'jacob':
+    jacob()
