@@ -89,8 +89,10 @@ def rename():
         if not os.path.isdir('/dev/sda2/Movies/' + files[:files.find('(')-1]):
             extention = files[-4:]
             os.mkdir(new_path + '/' + files[:files.find('(')-1])
-            copyfile(current_path + '/' + files, new_path + '/' + files[:files.find('(')-1] + '/' + files[:files.find('(')-1] + extention)
-            print(files[:files.find('(')-1], 'has been made and', files[:files.find('(')-1] + extention, 'has been moved')
+            copyfile(current_path + '/' + files, new_path + '/' + files[:files.find('(')-1] + '/' +
+                     files[:files.find('(')-1] + extention)
+            print(files[:files.find('(')-1], 'has been made and', files[:files.find('(')-1] + extention,
+                  'has been moved')
         else:
             print(files[:files.find('(')-1], 'Dir is already made')
 
@@ -100,8 +102,8 @@ def get_files():
     Gets all the files in a certain directory
         Files must be a file type in the extension_list
 
-    :return compile_csv: If Make_Movie_csv was selected at the start this will take all the files in the directory and put
-    them into a csv file (list),(str)
+    :return compile_csv: If Make_Movie_csv was selected at the start this will take all the files in the directory and
+    put them into a csv file (list),(str)
     :return plexcheck: If plex was selected at the start this will check all the folders in the selected directory and
     check the names to all the files in the selected plex library (list)
     """
@@ -244,10 +246,8 @@ def suggestion(suggest):
         for row in reader:
             list_of_media.append(row)
 
-
     # add suggestion to list
     list_of_media.append({'Name': name, 'Year': year})
-
 
     # writer
     with open(path_to_csv, 'w', encoding='ISO-8859-1', newline='') as csvfile:
@@ -265,6 +265,7 @@ def search_plex(search):
     :param search: Name of search (str)
     :return: list of files that contain name
     """
+    # sets config
     create_config()
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -277,38 +278,56 @@ def search_plex(search):
     account = MyPlexAccount(username, password)
     username = "*" * 5
     password = "*" * 5
-    # print("About to connect")
-    # print("Connecting......")
+
+    # connect to server
+    print(f"About to connect to {server_name}")
+    print("Connecting......")
     plex = account.resource(server_name).connect()
     print(f"Connected to '{server_name}'")
 
     media_list = []
+    # movies which have the same name as another movie
     problem_movies = [{'Name': 'The Monkey King', 'id': '119892'}]
     for video_search in plex.search(search):
         if video_search.TYPE == 'movie':
             # get movie id
-            movie_id_getter = requests.get(f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&language=en-US&query={video_search.title}&page=1&include_adult=true")
+            param_dict = {'api_key': api_key,
+                          'language': 'en-US',
+                          'query': video_search.title,
+                          'page': 1,
+                          'include_adult': 'true'}
+            api_url = 'https://api.themoviedb.org/3/search/movie?'
+            movie_id_getter = requests.get(api_url, param_dict)
             movie_id = movie_id_getter.json()
             if movie_id['total_results'] == 0:
-                media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a trailer.")) # wanted to try to do a different way of formatting
+                # wanted to try to do a different way of formatting
+                # adds movie to
+                media_list.append('%s (%s) %s' % (video_search.title, video_search.TYPE, "Couldn't find a trailer."))
             else:
-                movie_data = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id['results'][0]['id']}/videos?api_key={api_key}&language=en-US")
+                param_dict_movie = {'api_key': api_key,
+                                    'language': 'en-US'}
+                movie_data = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id['results'][0]['id']}/videos?",
+                                        param_dict_movie)
                 key = movie_data.json()
                 try:
                     # print(key)
                     media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE,
                                                               movie_id['results'][0]['release_date'][:4], '|',
                                                               f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
-                except IndexError:
-                    hit = []
+                except IndexError:# if movie hasn't been release
+                    # look through problem movies
+                    hit = []# if movie name is the same as the movie that has been searched
                     for index in range(len(problem_movies)):
                         for Name in problem_movies[index]:
                             if video_search.title == problem_movies[index][Name]:
                                 hit.append(index)
+                                param_dict_movie = {'api_key': api_key,
+                                                    'language': 'en-US',
+                                                    'page': 1}
                                 movie_data = requests.get(
-                                    f"https://api.themoviedb.org/3/movie/{problem_movies[index]['id']}/videos?api_key={api_key}&language=en-US&page=1")
+                                    f"https://api.themoviedb.org/3/movie/{problem_movies[index]['id']}/videos?",
+                                    param_dict_movie)
                                 key = movie_data.json()
-                                print(key)
                                 media_list.append('%s (%s - %s) %s %s' % (video_search.title, video_search.TYPE,
                                                                           key['results'][0]['published_at'][:4], '|',
                                                                      f"https://www.youtube.com/watch?v={key['results'][0]['key']}"))
@@ -316,6 +335,7 @@ def search_plex(search):
                                 media_list.append('%s (%s - %s) %s' % (video_search.title, video_search.TYPE,
                                                                        movie_id['results'][0]['release_date'][:4],
                                                                        "Couldn't find a trailer."))
+        # if video is an episode
         if video_search.TYPE == 'episode':
             shows_list = plex.library.section('TV Shows')
             for show in shows_list.all():
@@ -342,8 +362,10 @@ elif selection == 'rename':
 elif selection == 'plex_check':
     wipe_config()
     get_files()
+
+# test search
 elif selection == 'search':
-    print(search_plex('300'))
+    print(search_plex('Monkey'))
 
 # for adding information to the config
 elif selection == "open":
