@@ -105,8 +105,8 @@ def precopy_check():
 
     delete = input("Please enter 'd' to delete these files or enter to continue: ")
     if delete == 'd':
-        for folder in download_path_list:
-            os.remove(download_path + folder)
+        for folder in write_list:
+            os.remove(download_path + folder['Name'])
 
 
 def rename():
