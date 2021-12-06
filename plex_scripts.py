@@ -61,12 +61,52 @@ def wipe_config():
     wipe_file.close()
 
 
-selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', or 'plex_check': ")
+selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', 'plex_check', or 'precopy': ")
                 # selection of what function you want to use
                 # bot_mode does nothing expect for let the code run for the bot
                 # plex_check creates a csv file of the plex movies that much be checked
                 # rename is for renaming movie files
                 # Make_Movie_csv makes a csv of all the movies
+
+
+def precopy_check():
+    """
+    Checks main drive to see if folder is already there and if so write it down
+    :return: a csv with all the names of moves that are copies
+    """
+    path_type = input("Please enter custom or static: ")
+    if path_type == 'custom':
+        download_path = input("Please enter current path of files: ")
+    elif path_type == 'static':
+        download_path = '/home/plexadmin/Downloads/Plex/Movies/'
+    # new_path = input("Please enter where you want them to go: ")
+    master_path = '/home/plexadmin/Downloads/Plex/Movies/'
+
+    download_path_list = []
+    master_path_list = []
+
+    for download_dirs in os.listdir(download_path):
+        download_path_list.append(download_dirs)
+
+    for master_dirs in os.listdir(master_path):
+        master_path_list.append(master_dirs)
+
+    write_list = []
+    for item in download_path_list:
+        if item in master_path_list:
+            write_list.append({'Name': item})
+
+    headers = ["Name"]
+
+    with open('precopy.csv', 'w', encoding='ISO-8859-1', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(write_list)
+
+    delete = input("Please enter 'd' to delete these files or enter to continue: ")
+    if delete == 'd':
+        for folder in download_path_list:
+            os.remove(download_path + folder)
 
 
 def rename():
@@ -376,7 +416,7 @@ def jacob():
 
     my_movie_list = []
     for my_movie in my_movies.all():
-        my_movie_list.appende(my_movie.title)
+        my_movie_list.append(my_movie.title)
 
     jacob_movie_list = []
     for jacob_movie in jacob_movies.all():
@@ -401,13 +441,13 @@ def jacob():
 if selection == 'Make_Movie_csv':
     get_files()
     wipe_config()
-    input("Done! press any key to terminate program.")
 elif selection == 'rename':
     rename()
-    input("Done! press any key to terminate program.")
 elif selection == 'plex_check':
     wipe_config()
     get_files()
+elif selection == 'precopy':
+    precopy_check()
 
 # test search
 elif selection == 'search':
