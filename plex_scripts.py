@@ -5,7 +5,7 @@
 import os                                 # needed to scan through directories
 from shutil import copyfile               # used to copy files
 import csv                                # for csv files
-import requests
+import requests                           # for moviedb api requests
 from moviepy.editor import VideoFileClip  # get information on video files
 from alive_progress import alive_bar      # progress bar
 import time                               # dependency for alive_progress
@@ -462,5 +462,6 @@ elif selection == "close":
 elif selection == "clear":
     wipe_config()
 
+# test with friends server
 elif selection == 'jacob':
     jacob()
