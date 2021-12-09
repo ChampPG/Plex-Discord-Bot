@@ -3,6 +3,7 @@
 #TODO add argparse
 
 import os                                 # needed to scan through directories
+import shutil
 from shutil import copyfile               # used to copy files
 import csv                                # for csv files
 import requests                           # for moviedb api requests
@@ -61,12 +62,16 @@ def wipe_config():
     wipe_file.close()
 
 
-selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', 'plex_check', or 'precopy': ")
+selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', 'count', 'plex_check', or 'precopy': ")
                 # selection of what function you want to use
                 # bot_mode does nothing expect for let the code run for the bot
                 # plex_check creates a csv file of the plex movies that much be checked
                 # rename is for renaming movie files
                 # Make_Movie_csv makes a csv of all the movies
+
+def count():
+    master_path = '/mnt/sda2/Movies/'
+    print(len([name for name in os.listdir(master_path) if os.path.isdir(master_path + name)]))
 
 
 def precopy_check():
@@ -80,7 +85,7 @@ def precopy_check():
     elif path_type == 'static':
         download_path = '/home/plexadmin/Downloads/Plex/Movies/'
     # new_path = input("Please enter where you want them to go: ")
-    master_path = '/home/plexadmin/Downloads/Plex/Movies/'
+    master_path = '/mnt/sda2/Movies/'
 
     download_path_list = []
     master_path_list = []
@@ -91,6 +96,11 @@ def precopy_check():
     for master_dirs in os.listdir(master_path):
         master_path_list.append(master_dirs)
 
+    print("Master List")
+    print(master_path_list)
+    print("\n\n\n")
+    print("Download List")
+    print(download_path_list)
     write_list = []
     for item in download_path_list:
         if item in master_path_list:
@@ -106,7 +116,9 @@ def precopy_check():
     delete = input("Please enter 'd' to delete these files or enter to continue: ")
     if delete == 'd':
         for folder in write_list:
-            os.remove(download_path + folder['Name'])
+            if folder['Name'] != ".deletedByTMM":
+                shutil.rmtree(download_path + folder['Name'], ignore_errors=True)
+                # os.removedirs(download_path + folder['Name'])
 
 
 def rename():
@@ -437,6 +449,48 @@ def jacob():
         writer.writeheader()
         writer.writerows(movie_list)
 
+def jacob():
+    create_config()
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    username = config['PLEX']['username']  # username of plex admin from config.ini
+    password = config['PLEX']['password']  # password of plex admin from config.ini
+    my_server = config['PLEX']['server_name']  # takes in server name from config.ini
+    jacobs_server = "The Hive"
+    wipe_config()
+
+    account = MyPlexAccount(username, password)
+    my_plex = account.resource(my_server).connect()
+    print('connect to', my_server)
+    jacob_plex = account.resource(jacobs_server).connect()
+    print('connect to', jacobs_server)
+
+    my_movies = my_plex.library.section('Movies')
+    jacob_movies = jacob_plex.library.section('Movies')
+
+    my_movie_list = []
+    for my_movie in my_movies.all():
+        my_movie_list.appende(my_movie.title)
+
+    jacob_movie_list = []
+    for jacob_movie in jacob_movies.all():
+        jacob_movie_list.append(jacob_movie.title)
+
+    movie_list = []
+    with alive_bar(total=len(jacob_movies.all()), bar='blocks') as bar:  # Creates the bar
+        time.sleep(.005)
+        for movie in my_movie_list:
+            if movie not in jacob_movie_list:
+                movie_list.append({"Name": movie})
+            bar()
+
+    headers = ["Name"]
+
+    with open('jacob.csv', 'w', encoding='ISO-8859-1', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(movie_list)
+
 # Selects which path to take from user input
 if selection == 'Make_Movie_csv':
     get_files()
@@ -448,6 +502,8 @@ elif selection == 'plex_check':
     get_files()
 elif selection == 'precopy':
     precopy_check()
+elif selection == 'count':
+    count()
 
 # test search
 elif selection == 'search':
@@ -461,6 +517,12 @@ elif selection == "close":
     wipe_config()
 elif selection == "clear":
     wipe_config()
+
+# checking friends movies with mine
+elif selection == 'jacob':
+    jacob()
+
+
 
 # test with friends server
 elif selection == 'jacob':
