@@ -69,6 +69,7 @@ selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', 'count',
                 # rename is for renaming movie files
                 # Make_Movie_csv makes a csv of all the movies
 
+
 def count():
     master_path = '/mnt/sda2/Movies/'
     print(len([name for name in os.listdir(master_path) if os.path.isdir(master_path + name)]))
@@ -191,6 +192,51 @@ def get_files():
     if selection == 'plex_check':
         return plexcheck(directory_list)
 
+
+def plex_location_test():
+    create_config()
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    username = config['PLEX']['username']  # username of plex admin from config.ini
+    password = config['PLEX']['password']  # password of plex admin from config.ini
+    server_name = config['PLEX']['server_name']  # takes in server name from config.ini
+    wipe_config()
+    # gets plex content
+    account = MyPlexAccount(username, password)
+    plex = account.resource(server_name).connect()
+
+    movies_list = []
+    movies = plex.library.section('Movies')
+
+    for video in movies.all():
+        path = video.locations
+        for item in path:
+            movie = item.replace('/mnt/sda2/Movies/', '')
+            movies_list.append(movie[:movie.find('/')])
+
+    movie_path = '/mnt/PlexNFS/Plex/Movies/'
+
+    movie_dirs = os.listdir(movie_path)
+
+    write_list = []
+    for dir in movie_dirs:
+        if dir not in movies_list:
+            write_list.append({'Name': dir})
+
+    headers = ["Name"]
+
+    with open('plex_locations.csv', 'w', encoding='ISO-8859-1', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(write_list)
+
+
+    print(movies_list)
+    # movie =''
+    # for item in path:
+    #     movie = item.replace('/mnt/sda2/Movies/', '')
+    #
+    # print(movie[:movie.find('/')])
 
 def plexcheck(list_of_files):
     """
@@ -404,52 +450,6 @@ def search_plex(search):
 
 
 def jacob():
-    """
-
-    :return:
-    """
-    create_config()
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    username = config['PLEX']['username']  # username of plex admin from config.ini
-    password = config['PLEX']['password']  # password of plex admin from config.ini
-    my_server = config['PLEX']['server_name']  # takes in server name from config.ini
-    jacobs_server = "The Hive"
-    wipe_config()
-
-    account = MyPlexAccount(username, password)
-    my_plex = account.resource(my_server).connect()
-    print('connect to', my_server)
-    jacob_plex = account.resource(jacobs_server).connect()
-    print('connect to', jacobs_server)
-
-    my_movies = my_plex.library.section('Movies')
-    jacob_movies = jacob_plex.library.section('Movies')
-
-    my_movie_list = []
-    for my_movie in my_movies.all():
-        my_movie_list.append(my_movie.title)
-
-    jacob_movie_list = []
-    for jacob_movie in jacob_movies.all():
-        jacob_movie_list.append(jacob_movie.title)
-
-    movie_list = []
-    with alive_bar(total=len(jacob_movies.all()), bar='blocks') as bar:  # Creates the bar
-        time.sleep(.005)
-        for movie in my_movie_list:
-            if movie not in jacob_movie_list:
-                movie_list.append({"Name": movie})
-            bar()
-
-    headers = ["Name"]
-
-    with open('jacob.csv', 'w', encoding='ISO-8859-1', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=headers)
-        writer.writeheader()
-        writer.writerows(movie_list)
-
-def jacob():
     create_config()
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -504,6 +504,8 @@ elif selection == 'precopy':
     precopy_check()
 elif selection == 'count':
     count()
+elif selection == "test":
+    plex_location_test()
 
 # test search
 elif selection == 'search':
