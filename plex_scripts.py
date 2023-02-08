@@ -71,7 +71,7 @@ selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', 'count',
 
 
 def count():
-    master_path = '/mnt/sda2/Movies/'
+    master_path = '<path_to_movies>'
     print(len([name for name in os.listdir(master_path) if os.path.isdir(master_path + name)]))
 
 
@@ -84,9 +84,9 @@ def precopy_check():
     if path_type == 'custom':
         download_path = input("Please enter current path of files: ")
     elif path_type == 'static':
-        download_path = '/home/plexadmin/Downloads/Plex/Movies/'
+        download_path = '<path_to_downloads>'
     # new_path = input("Please enter where you want them to go: ")
-    master_path = '/mnt/sda2/Movies/'
+    master_path = '<path_to_movies>'
 
     download_path_list = []
     master_path_list = []
@@ -134,9 +134,9 @@ def rename():
     if path_type == 'custom':
         current_path = input("Please enter current path of files: ")
     elif path_type == 'static':
-        current_path = '/home/plexadmin/Downloads/Plex/Epic Films 4/'
+        current_path = '<path_to_rename_folder>'
     # new_path = input("Please enter where you want them to go: ")
-    new_path = '/home/plexadmin/Downloads/Plex/Movies/'
+    new_path = '<path_to_new_folder>'
 
     for files in os.listdir(current_path):
         if not os.path.isdir('/dev/sda2/Movies/' + files[:files.find('(')-1]):
@@ -164,7 +164,7 @@ def get_files():
     if path_type == 'custom':
         path_to_files = input("Please enter current path of files: ")
     elif path_type == 'static':
-        path_to_files = '/mnt/sda2/Movies'
+        path_to_files = '<movie_location>'
 
     extention_list = ['mp4', 'mov', 'mkv',
                       'avi', 'wmv', 'flv',
@@ -211,10 +211,10 @@ def plex_location_test():
     for video in movies.all():
         path = video.locations
         for item in path:
-            movie = item.replace('/mnt/sda2/Movies/', '')
+            movie = item.replace('<path_to_movies>', '')
             movies_list.append(movie[:movie.find('/')])
 
-    movie_path = '/mnt/PlexNFS/Plex/Movies/'
+    movie_path = '<path_to_movies>'
 
     movie_dirs = os.listdir(movie_path)
 
@@ -449,21 +449,21 @@ def search_plex(search):
         return "Nothing In Plex"
 
 
-def jacob():
+def friend():
     create_config()
     config = configparser.ConfigParser()
     config.read('config.ini')
     username = config['PLEX']['username']  # username of plex admin from config.ini
     password = config['PLEX']['password']  # password of plex admin from config.ini
     my_server = config['PLEX']['server_name']  # takes in server name from config.ini
-    jacobs_server = "The Hive"
+    friend_server = "<server_name>"
     wipe_config()
 
     account = MyPlexAccount(username, password)
     my_plex = account.resource(my_server).connect()
     print('connect to', my_server)
-    jacob_plex = account.resource(jacobs_server).connect()
-    print('connect to', jacobs_server)
+    jacob_plex = account.resource(friend_server).connect()
+    print('connect to', friend_server)
 
     my_movies = my_plex.library.section('Movies')
     jacob_movies = jacob_plex.library.section('Movies')
@@ -521,11 +521,9 @@ elif selection == "clear":
     wipe_config()
 
 # checking friends movies with mine
-elif selection == 'jacob':
-    jacob()
-
-
+elif selection == 'friend':
+    friend()
 
 # test with friends server
-elif selection == 'jacob':
-    jacob()
+# elif selection == 'friend':
+#     friend()
