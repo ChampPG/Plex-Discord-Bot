@@ -320,10 +320,12 @@ def search_plex(search):
     password = "*" * 5
 
     # connect to server
-    print(f"About to connect to {server_name}")
+    # print(f"About to connect to {server_name}")
     print("Connecting......")
     plex = account.resource(server_name).connect()
-    print(f"Connected to '{server_name}'")
+    # print(f"Connected to '{server_name}'")
+    print("Connected")
+    print("Searching.......")
 
     media_list = []
     # movies which have the same name as another movie

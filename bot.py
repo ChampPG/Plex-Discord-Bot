@@ -19,7 +19,7 @@ def output(username, message, channel):
 @client.event
 async def on_ready():
     print('Bot is online! {0.user}'.format(client))
-    # await client.change_presence(activity=discord.Game(name="!help for commands"))
+    await client.change_presence(activity=discord.Game(name="!help for commands"))
 
 
 @client.command()
@@ -135,6 +135,7 @@ async def shutdown(ctx):
     for channel_name in channels:
         if ctx.channel.name == channel_name:
             output(ctx.author, ctx.message.content, channel_name)
+            ctx.send("Shutting Down...")
             print('Shutting Down')
             await ctx.bot.logout()
 
