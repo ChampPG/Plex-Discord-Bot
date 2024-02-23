@@ -3,6 +3,7 @@
 #TODO add argparse
 
 import os                                 # needed to scan through directories
+import shutil
 from shutil import copyfile               # used to copy files
 import csv                                # for csv files
 import requests                           # for moviedb api requests
@@ -61,12 +62,17 @@ def wipe_config():
     wipe_file.close()
 
 
-selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', 'plex_check', or 'precopy': ")
+selection = input("Please enter 'rename', 'Make_Movie_csv', 'bot_mode', 'count', 'plex_check', or 'precopy': ")
                 # selection of what function you want to use
                 # bot_mode does nothing expect for let the code run for the bot
                 # plex_check creates a csv file of the plex movies that much be checked
                 # rename is for renaming movie files
                 # Make_Movie_csv makes a csv of all the movies
+
+
+def count():
+    master_path = '<path_to_movies>'
+    print(len([name for name in os.listdir(master_path) if os.path.isdir(master_path + name)]))
 
 
 def precopy_check():
@@ -78,9 +84,9 @@ def precopy_check():
     if path_type == 'custom':
         download_path = input("Please enter current path of files: ")
     elif path_type == 'static':
-        download_path = '/home/plexadmin/Downloads/Plex/Movies/'
+        download_path = '<path_to_downloads>'
     # new_path = input("Please enter where you want them to go: ")
-    master_path = '/home/plexadmin/Downloads/Plex/Movies/'
+    master_path = '<path_to_movies>'
 
     download_path_list = []
     master_path_list = []
@@ -91,6 +97,11 @@ def precopy_check():
     for master_dirs in os.listdir(master_path):
         master_path_list.append(master_dirs)
 
+    print("Master List")
+    print(master_path_list)
+    print("\n\n\n")
+    print("Download List")
+    print(download_path_list)
     write_list = []
     for item in download_path_list:
         if item in master_path_list:
@@ -106,7 +117,9 @@ def precopy_check():
     delete = input("Please enter 'd' to delete these files or enter to continue: ")
     if delete == 'd':
         for folder in write_list:
-            os.remove(download_path + folder['Name'])
+            if folder['Name'] != ".deletedByTMM":
+                shutil.rmtree(download_path + folder['Name'], ignore_errors=True)
+                # os.removedirs(download_path + folder['Name'])
 
 
 def rename():
@@ -121,9 +134,9 @@ def rename():
     if path_type == 'custom':
         current_path = input("Please enter current path of files: ")
     elif path_type == 'static':
-        current_path = '/home/plexadmin/Downloads/Plex/Epic Films 4/'
+        current_path = '<path_to_rename_folder>'
     # new_path = input("Please enter where you want them to go: ")
-    new_path = '/home/plexadmin/Downloads/Plex/Movies/'
+    new_path = '<path_to_new_folder>'
 
     for files in os.listdir(current_path):
         if not os.path.isdir('/dev/sda2/Movies/' + files[:files.find('(')-1]):
@@ -151,7 +164,7 @@ def get_files():
     if path_type == 'custom':
         path_to_files = input("Please enter current path of files: ")
     elif path_type == 'static':
-        path_to_files = '/mnt/sda2/Movies'
+        path_to_files = '<movie_location>'
 
     extention_list = ['mp4', 'mov', 'mkv',
                       'avi', 'wmv', 'flv',
@@ -179,6 +192,51 @@ def get_files():
     if selection == 'plex_check':
         return plexcheck(directory_list)
 
+
+def plex_location_test():
+    create_config()
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    username = config['PLEX']['username']  # username of plex admin from config.ini
+    password = config['PLEX']['password']  # password of plex admin from config.ini
+    server_name = config['PLEX']['server_name']  # takes in server name from config.ini
+    wipe_config()
+    # gets plex content
+    account = MyPlexAccount(username, password)
+    plex = account.resource(server_name).connect()
+
+    movies_list = []
+    movies = plex.library.section('Movies')
+
+    for video in movies.all():
+        path = video.locations
+        for item in path:
+            movie = item.replace('<path_to_movies>', '')
+            movies_list.append(movie[:movie.find('/')])
+
+    movie_path = '<path_to_movies>'
+
+    movie_dirs = os.listdir(movie_path)
+
+    write_list = []
+    for dir in movie_dirs:
+        if dir not in movies_list:
+            write_list.append({'Name': dir})
+
+    headers = ["Name"]
+
+    with open('plex_locations.csv', 'w', encoding='ISO-8859-1', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(write_list)
+
+
+    print(movies_list)
+    # movie =''
+    # for item in path:
+    #     movie = item.replace('/mnt/sda2/Movies/', '')
+    #
+    # print(movie[:movie.find('/')])
 
 def plexcheck(list_of_files):
     """
@@ -393,32 +451,28 @@ def search_plex(search):
         return "Nothing In Plex"
 
 
-def jacob():
-    """
-
-    :return:
-    """
+def friend():
     create_config()
     config = configparser.ConfigParser()
     config.read('config.ini')
     username = config['PLEX']['username']  # username of plex admin from config.ini
     password = config['PLEX']['password']  # password of plex admin from config.ini
     my_server = config['PLEX']['server_name']  # takes in server name from config.ini
-    jacobs_server = "The Hive"
+    friend_server = "<server_name>"
     wipe_config()
 
     account = MyPlexAccount(username, password)
     my_plex = account.resource(my_server).connect()
     print('connect to', my_server)
-    jacob_plex = account.resource(jacobs_server).connect()
-    print('connect to', jacobs_server)
+    jacob_plex = account.resource(friend_server).connect()
+    print('connect to', friend_server)
 
     my_movies = my_plex.library.section('Movies')
     jacob_movies = jacob_plex.library.section('Movies')
 
     my_movie_list = []
     for my_movie in my_movies.all():
-        my_movie_list.append(my_movie.title)
+        my_movie_list.appende(my_movie.title)
 
     jacob_movie_list = []
     for jacob_movie in jacob_movies.all():
@@ -450,6 +504,10 @@ elif selection == 'plex_check':
     get_files()
 elif selection == 'precopy':
     precopy_check()
+elif selection == 'count':
+    count()
+elif selection == "test":
+    plex_location_test()
 
 # test search
 elif selection == 'search':
@@ -464,6 +522,10 @@ elif selection == "close":
 elif selection == "clear":
     wipe_config()
 
+# checking friends movies with mine
+elif selection == 'friend':
+    friend()
+
 # test with friends server
-elif selection == 'jacob':
-    jacob()
+# elif selection == 'friend':
+#     friend()
